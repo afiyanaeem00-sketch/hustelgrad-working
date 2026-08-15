@@ -1,0 +1,39 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_DATABASE: ${DB_NAME:-placement_portal}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-password}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./hustlegrad-backend/
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+     - "./hustlegrad-backend/.env"  
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+    build:
+      context: ./hustlegrad-frontend/
+    depends_on:
+      - "backend"
+    restart: always
+    ports:
+      - "100:100"
+
+volumes:
+  mysql_data:
