@@ -1,0 +1,11 @@
+{
+  "title": "login and dashboard design",
+  "description": "Provides a secure login and signup platform for university placement cells enabling role-based access for officers, coordinators, students, and recruiters.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
