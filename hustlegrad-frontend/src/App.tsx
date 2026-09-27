@@ -8,10 +8,10 @@ import {
   Eye, EyeOff, Sun, Moon, ShieldCheck
 } from 'lucide-react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  BarChart, Bar, XAxis, Line, LineChart, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell
 } from 'recharts'
-import hustleGradLogo from '@/imports/Screenshot_2026-08-01_153948-removebg-preview.png'
+//import hustleGradLogo from '@/imports/Screenshot_2026-08-01_153948-removebg-preview.png'
 import { api } from '@/lib/api'
 
 const theme = (dark: boolean) => ({
@@ -601,11 +601,7 @@ function AppShell({ darkMode, setDarkMode, onLogout }: { darkMode: boolean; setD
       >
         {/* Wordmark */}
         <div className="flex items-center gap-3 px-5 h-16 shrink-0" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-          <img
-            src={hustleGradLogo}
-            alt="HustleGrad"
-            style={{ width: 28, height: 28, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-          />
+
           <span style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.bg, letterSpacing: '0.02em' }}>
             HustleGrad
           </span>
@@ -774,13 +770,17 @@ function AppShell({ darkMode, setDarkMode, onLogout }: { darkMode: boolean; setD
               <ChevronDown size={12} style={{ color: t.textMuted }} />
             </button>
             {profileOpen && (
-              <div className="absolute right-0 top-11 w-48 rounded-xl shadow-xl z-50 overflow-hidden" style={{ background: t.bg, border: '1px solid t.border' }}>
+              <div className="absolute right-0 top-11 w-48 rounded-xl shadow-xl z-50 overflow-hidden" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
                 {['Profile', 'Account Settings', 'Help & Support', 'Sign Out'].map((item, i, arr) => (
                   <button
                     key={item}
-                    onClick={item === 'Sign Out' ? onLogout : undefined}
+                    onClick={() => {
+                      setProfileOpen(false)
+                      if (item === 'Sign Out') { onLogout() }
+                      else { setActiveNav(item) }
+                    }}
                     className="w-full text-left px-4 py-2.5 text-xs transition-colors hover:bg-slate-50"
-                    style={{ color: item === 'Sign Out' ? '#ef4444' : t.text, borderBottom: i < arr.length - 1 ? '1px solid #f8fafc' : 'none' }}
+                    style={{ color: item === 'Sign Out' ? '#ef4444' : t.text, borderBottom: i < arr.length - 1 ? `1px solid ${t.border}` : 'none' }}
                   >
                     {item}
                   </button>
@@ -805,7 +805,11 @@ function AppShell({ darkMode, setDarkMode, onLogout }: { darkMode: boolean; setD
           {activeNav === 'Companies' && <CompaniesPage />}
           {activeNav === 'Communication' && <CommunicationPage />}
           {activeNav === 'Users' && <UsersPage />}
-          {activeNav !== 'Dashboard' && activeNav !== 'Students' && activeNav !== 'Placements' && activeNav !== 'Internships' && activeNav !== 'Drives' && activeNav !== 'Companies' && activeNav !== 'Communication' && activeNav !== 'Users' && (
+          {activeNav === 'Analytics' && <AnalyticsPage />}
+          {activeNav === 'Documents' && <DocumentsPage />}
+          {activeNav === 'Reports' && <ReportsPage />}
+          {activeNav === 'Settings' && <SettingsPage />}
+          {activeNav !== 'Dashboard' && activeNav !== 'Students' && activeNav !== 'Placements' && activeNav !== 'Internships' && activeNav !== 'Drives' && activeNav !== 'Companies' && activeNav !== 'Communication' && activeNav !== 'Users' && activeNav !== 'Analytics' && (
             <div className="flex items-center justify-center h-full">
               <p className="text-sm" style={{ color: t.textMuted }}>{activeNav} — coming soon</p>
             </div>
@@ -819,6 +823,693 @@ function AppShell({ darkMode, setDarkMode, onLogout }: { darkMode: boolean; setD
     </div>
   )
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Analytics page — replace the "Analytics — coming soon" placeholder with this
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Mock data shaped like a real /api/analytics response would be.
+// Swap these for real fetched data later — same shape, no UI changes needed.
+
+const PLACEMENT_RATE_TREND = [
+  { month: 'Jul', rate: 12 },
+  { month: 'Aug', rate: 18 },
+  { month: 'Sep', rate: 27 },
+  { month: 'Oct', rate: 34 },
+  { month: 'Nov', rate: 41 },
+  { month: 'Dec', rate: 47 },
+  { month: 'Jan', rate: 58 },
+  { month: 'Feb', rate: 66 },
+  { month: 'Mar', rate: 74 },
+  { month: 'Apr', rate: 81 },
+  { month: 'May', rate: 86 },
+  { month: 'Jun', rate: 89 },
+]
+
+const DEPARTMENT_BREAKDOWN = [
+  { dept: 'CSE', placed: 214, total: 240 },
+  { dept: 'ECE', placed: 156, total: 190 },
+  { dept: 'Mech', placed: 98, total: 160 },
+  { dept: 'Civil', placed: 61, total: 110 },
+  { dept: 'IT', placed: 172, total: 200 },
+  { dept: 'EEE', placed: 88, total: 130 },
+]
+
+const OFFER_FUNNEL = [
+  { stage: 'Applied', count: 1840 },
+  { stage: 'Interviewed', count: 1120 },
+  { stage: 'Offered', count: 612 },
+  { stage: 'Accepted', count: 487 },
+]
+
+const AVG_PACKAGE_TREND = [
+  { month: 'Jul', avgLpa: 5.8 },
+  { month: 'Aug', avgLpa: 6.1 },
+  { month: 'Sep', avgLpa: 6.4 },
+  { month: 'Oct', avgLpa: 6.9 },
+  { month: 'Nov', avgLpa: 7.2 },
+  { month: 'Dec', avgLpa: 7.0 },
+  { month: 'Jan', avgLpa: 7.6 },
+  { month: 'Feb', avgLpa: 7.9 },
+  { month: 'Mar', avgLpa: 8.3 },
+  { month: 'Apr', avgLpa: 8.1 },
+  { month: 'May', avgLpa: 8.6 },
+  { month: 'Jun', avgLpa: 8.9 },
+]
+
+function AnalyticsPage() {
+  const t = useTheme()
+  const [hoveredDept, setHoveredDept] = useState<number | null>(null)
+  const [hoveredFunnel, setHoveredFunnel] = useState<number | null>(null)
+
+  const totalPlaced = DEPARTMENT_BREAKDOWN.reduce((s, d) => s + d.placed, 0)
+  const totalEligible = DEPARTMENT_BREAKDOWN.reduce((s, d) => s + d.total, 0)
+  const overallRate = ((totalPlaced / totalEligible) * 100).toFixed(1)
+  const conversionRate = ((OFFER_FUNNEL[3].count / OFFER_FUNNEL[0].count) * 100).toFixed(1)
+  const latestPkg = AVG_PACKAGE_TREND[AVG_PACKAGE_TREND.length - 1].avgLpa
+  const firstPkg = AVG_PACKAGE_TREND[0].avgLpa
+  const pkgGrowth = (((latestPkg - firstPkg) / firstPkg) * 100).toFixed(0)
+
+  return (
+    <div className="px-5 lg:px-7 py-6">
+
+      {/* Summary strip */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Overall Placement Rate', value: `${overallRate}%`, sub: `${totalPlaced} of ${totalEligible} eligible` },
+          { label: 'Offer Conversion Rate', value: `${conversionRate}%`, sub: 'Applied → Accepted' },
+          { label: 'Avg. Package (Latest)', value: `₹${latestPkg} LPA`, sub: `+${pkgGrowth}% since Jul` },
+          { label: 'Departments Tracked', value: String(DEPARTMENT_BREAKDOWN.length), sub: 'Active this year' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-5 flex flex-col gap-3" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+            <span style={{ fontFamily: FONT_BODY, fontSize: '0.7rem', color: t.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</span>
+            <div>
+              <div style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '2rem', color: t.text, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.value}</div>
+              <div className="text-xs mt-2" style={{ color: t.textMuted }}>{s.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-4">
+
+        {/* Placement rate trend — line chart */}
+        <div className="rounded-xl p-6" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+          <div className="mb-6">
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Placement Rate Trend</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Cumulative % of eligible students placed · AY 2025–26</p>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={PLACEMENT_RATE_TREND} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={t.bgAlt} strokeDasharray="0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <Tooltip
+                cursor={{ stroke: t.accent, strokeWidth: 1, strokeDasharray: '3 3' }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  return (
+                    <div className="rounded-lg px-3 py-2 text-xs shadow-lg" style={{ background: t.text, color: t.bg }}>
+                      <div className="font-semibold" style={{ fontFamily: FONT_DISPLAY }}>{label} 2025–26</div>
+                      <div className="mt-0.5" style={{ color: '#a5b4fc' }}>{payload[0].value}% placed</div>
+                    </div>
+                  )
+                }}
+              />
+              <Line type="monotone" dataKey="rate" stroke={t.accent} strokeWidth={2.5} dot={{ r: 3, fill: t.accent, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Average package trend — line chart */}
+        <div className="rounded-xl p-6" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+          <div className="mb-6">
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Average Package Trend</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Monthly average CTC offered · AY 2025–26</p>
+          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={AVG_PACKAGE_TREND} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={t.bgAlt} strokeDasharray="0" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} tickFormatter={(v) => `₹${v}L`} />
+              <Tooltip
+                cursor={{ stroke: '#10b981', strokeWidth: 1, strokeDasharray: '3 3' }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  return (
+                    <div className="rounded-lg px-3 py-2 text-xs shadow-lg" style={{ background: t.text, color: t.bg }}>
+                      <div className="font-semibold" style={{ fontFamily: FONT_DISPLAY }}>{label} 2025–26</div>
+                      <div className="mt-0.5" style={{ color: '#6ee7b7' }}>₹{payload[0].value} LPA average</div>
+                    </div>
+                  )
+                }}
+              />
+              <Line type="monotone" dataKey="avgLpa" stroke="#10b981" strokeWidth={2.5} dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }} activeDot={{ r: 5 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+
+        {/* Department-wise breakdown — bar chart */}
+        <div className="rounded-xl p-6" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+          <div className="mb-6">
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Department-wise Placement</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Students placed vs. eligible, by department</p>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={DEPARTMENT_BREAKDOWN} barSize={22} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+              <CartesianGrid vertical={false} stroke={t.bgAlt} strokeDasharray="0" />
+              <XAxis dataKey="dept" tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} />
+              <Tooltip
+                cursor={{ fill: '#f8fafc', radius: 4 }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  const d = DEPARTMENT_BREAKDOWN.find(x => x.dept === label)
+                  if (!d) return null
+                  return (
+                    <div className="rounded-lg px-3 py-2 text-xs shadow-lg" style={{ background: t.text, color: t.bg }}>
+                      <div className="font-semibold" style={{ fontFamily: FONT_DISPLAY }}>{label}</div>
+                      <div className="mt-0.5" style={{ color: '#a5b4fc' }}>{d.placed} of {d.total} placed ({((d.placed / d.total) * 100).toFixed(0)}%)</div>
+                    </div>
+                  )
+                }}
+              />
+              <Bar dataKey="total" radius={[4, 4, 0, 0]} fill="#e2e8f0" />
+              <Bar dataKey="placed" radius={[4, 4, 0, 0]} onMouseEnter={(_, i) => setHoveredDept(i)} onMouseLeave={() => setHoveredDept(null)}>
+                {DEPARTMENT_BREAKDOWN.map((_, i) => (
+                  <Cell key={i} fill={hoveredDept === i ? t.accent : '#c7d2fe'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center gap-4 mt-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm" style={{ background: '#c7d2fe' }} />
+              <span className="text-xs" style={{ color: t.textMuted }}>Placed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm" style={{ background: '#e2e8f0' }} />
+              <span className="text-xs" style={{ color: t.textMuted }}>Total eligible</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Offer conversion funnel — bar chart */}
+        <div className="rounded-xl p-6" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+          <div className="mb-6">
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Offer Conversion Funnel</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Applied → Interviewed → Offered → Accepted</p>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={OFFER_FUNNEL} layout="vertical" barSize={22} margin={{ top: 4, right: 24, left: 8, bottom: 0 }}>
+              <CartesianGrid horizontal={false} stroke={t.bgAlt} strokeDasharray="0" />
+              <XAxis type="number" tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="stage" tick={{ fontSize: 11, fill: t.textMuted, fontFamily: FONT_BODY }} axisLine={false} tickLine={false} width={80} />
+              <Tooltip
+                cursor={{ fill: '#f8fafc', radius: 4 }}
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null
+                  const idx = OFFER_FUNNEL.findIndex(x => x.stage === label)
+                  const pct = ((OFFER_FUNNEL[idx].count / OFFER_FUNNEL[0].count) * 100).toFixed(0)
+                  return (
+                    <div className="rounded-lg px-3 py-2 text-xs shadow-lg" style={{ background: t.text, color: t.bg }}>
+                      <div className="font-semibold" style={{ fontFamily: FONT_DISPLAY }}>{label}</div>
+                      <div className="mt-0.5" style={{ color: '#a5b4fc' }}>{payload[0].value} students ({pct}% of applied)</div>
+                    </div>
+                  )
+                }}
+              />
+              <Bar dataKey="count" radius={[0, 4, 4, 0]} onMouseEnter={(_, i) => setHoveredFunnel(i)} onMouseLeave={() => setHoveredFunnel(null)}>
+                {OFFER_FUNNEL.map((_, i) => (
+                  <Cell key={i} fill={hoveredFunnel === i ? t.accent : '#c7d2fe'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Documents page — replace the "Documents — coming soon" fallback with this
+// ─────────────────────────────────────────────────────────────────────────────
+
+type DocStatus = 'Verified' | 'Pending' | 'Rejected' | 'Missing'
+
+const DOC_STATUS_STYLE: Record<DocStatus, { color: string; accent: string }> = {
+  Verified: { color: '#059669', accent: '#10b981' },
+  Pending: { color: '#b45309', accent: '#f59e0b' },
+  Rejected: { color: '#dc2626', accent: '#ef4444' },
+  Missing: { color: '#64748b', accent: '#94a3b8' },
+}
+
+type StudentDoc = {
+  student: string
+  roll: string
+  dept: string
+  resume: DocStatus
+  idProof: DocStatus
+  certificates: DocStatus
+  updated: string
+}
+
+const STUDENT_DOCS: StudentDoc[] = [
+  { student: 'Ananya Rao', roll: 'CS21B045', dept: 'CSE', resume: 'Verified', idProof: 'Verified', certificates: 'Verified', updated: '2 days ago' },
+  { student: 'Rohit Mehta', roll: 'EC21B012', dept: 'ECE', resume: 'Pending', idProof: 'Verified', certificates: 'Missing', updated: '5 days ago' },
+  { student: 'Sanya Kapoor', roll: 'CS21B078', dept: 'CSE', resume: 'Verified', idProof: 'Pending', certificates: 'Verified', updated: '1 day ago' },
+  { student: 'Vikram Singh', roll: 'ME21B023', dept: 'Mech', resume: 'Rejected', idProof: 'Verified', certificates: 'Pending', updated: '4 days ago' },
+  { student: 'Priya Nair', roll: 'IT21B091', dept: 'IT', resume: 'Verified', idProof: 'Verified', certificates: 'Verified', updated: '6 days ago' },
+  { student: 'Arjun Desai', roll: 'CV21B008', dept: 'Civil', resume: 'Missing', idProof: 'Missing', certificates: 'Missing', updated: '9 days ago' },
+]
+
+function DocBadge({ status }: { status: DocStatus }) {
+  const s = DOC_STATUS_STYLE[status]
+  return (
+    <span style={{
+      display: 'inline-block',
+      borderLeft: `2px solid ${s.accent}`,
+      paddingLeft: '8px',
+      color: s.color,
+      fontWeight: 600,
+      fontSize: '0.75rem',
+      fontFamily: FONT_BODY,
+    }}>
+      {status}
+    </span>
+  )
+}
+
+function DocumentsPage() {
+  const t = useTheme()
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'All' | DocStatus>('All')
+
+  const filtered = useMemo(() => {
+    let rows = STUDENT_DOCS.slice()
+    if (search) rows = rows.filter(r => r.student.toLowerCase().includes(search.toLowerCase()) || r.roll.toLowerCase().includes(search.toLowerCase()))
+    if (statusFilter !== 'All') rows = rows.filter(r => r.resume === statusFilter || r.idProof === statusFilter || r.certificates === statusFilter)
+    return rows
+  }, [search, statusFilter])
+
+  const counts = useMemo(() => {
+    const all = STUDENT_DOCS.flatMap(r => [r.resume, r.idProof, r.certificates])
+    return {
+      verified: all.filter(s => s === 'Verified').length,
+      pending: all.filter(s => s === 'Pending').length,
+      missing: all.filter(s => s === 'Missing' || s === 'Rejected').length,
+    }
+  }, [])
+
+  return (
+    <div className="px-5 lg:px-7 py-6">
+
+      {/* Summary strip */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Students Tracked', value: String(STUDENT_DOCS.length), sub: 'Across all departments' },
+          { label: 'Documents Verified', value: String(counts.verified), sub: 'Ready for placement' },
+          { label: 'Pending Review', value: String(counts.pending), sub: 'Awaiting officer action' },
+          { label: 'Missing / Rejected', value: String(counts.missing), sub: 'Needs student follow-up' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-5 flex flex-col gap-3" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+            <span style={{ fontFamily: FONT_BODY, fontSize: '0.7rem', color: t.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</span>
+            <div>
+              <div style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '2rem', color: t.text, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.value}</div>
+              <div className="text-xs mt-2" style={{ color: t.textMuted }}>{s.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="rounded-xl overflow-hidden" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+        <div className="flex items-center justify-between px-5 py-4 gap-3 flex-wrap" style={{ borderBottom: '1px solid #f8fafc' }}>
+          <div>
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Student Documents</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Resumes, ID proofs & certificates · {filtered.length} students</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search name or roll no."
+              className="text-xs px-3 py-1.5 rounded-lg outline-none"
+              style={{ border: '1px solid #e0e5ff', color: t.text, background: t.bg, fontFamily: FONT_BODY, width: 180 }}
+            />
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value as 'All' | DocStatus)}
+              className="text-xs px-3 py-1.5 rounded-lg outline-none"
+              style={{ border: '1px solid #e0e5ff', color: t.text, background: t.bg, fontFamily: FONT_BODY }}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Verified">Verified</option>
+              <option value="Pending">Pending</option>
+              <option value="Rejected">Rejected</option>
+              <option value="Missing">Missing</option>
+            </select>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #f8fafc' }}>
+                {['Student', 'Dept', 'Resume', 'ID Proof', 'Certificates', 'Last Updated', ''].map(h => (
+                  <th key={h} className="text-left px-5 py-3" style={{ fontSize: '0.68rem', fontWeight: 600, color: t.textMuted, fontFamily: FONT_BODY, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r, i) => (
+                <tr key={r.roll} className="transition-colors hover:bg-slate-50" style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f8fafc' : 'none' }}>
+                  <td className="px-5 py-3.5">
+                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: t.text, fontFamily: FONT_DISPLAY }}>{r.student}</div>
+                    <div className="text-xs" style={{ color: t.textMuted, fontFamily: FONT_MONO }}>{r.roll}</div>
+                  </td>
+                  <td className="px-5 py-3.5"><span className="text-xs" style={{ color: t.textMuted }}>{r.dept}</span></td>
+                  <td className="px-5 py-3.5"><DocBadge status={r.resume} /></td>
+                  <td className="px-5 py-3.5"><DocBadge status={r.idProof} /></td>
+                  <td className="px-5 py-3.5"><DocBadge status={r.certificates} /></td>
+                  <td className="px-5 py-3.5"><span className="text-xs" style={{ color: t.textMuted }}>{r.updated}</span></td>
+                  <td className="px-5 py-3.5">
+                    <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors" style={{ color: t.accent, border: '1px solid #e0e5ff' }}>
+                      View <ArrowRight size={12} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Reports page — replace the "Reports — coming soon" fallback with this
+// ─────────────────────────────────────────────────────────────────────────────
+
+type ReportFreq = 'On demand' | 'Monthly' | 'Quarterly' | 'Annual'
+
+type ReportItem = {
+  name: string
+  description: string
+  freq: ReportFreq
+  lastGenerated: string
+  format: 'PDF' | 'Excel'
+}
+
+const REPORTS: ReportItem[] = [
+  { name: 'Placement Summary', description: 'Overall placement rate, offers, and package stats for the academic year', freq: 'Monthly', lastGenerated: '3 days ago', format: 'PDF' },
+  { name: 'Department-wise Report', description: 'Placement breakdown by department, including eligible vs. placed counts', freq: 'Monthly', lastGenerated: '3 days ago', format: 'Excel' },
+  { name: 'Company-wise Report', description: 'Companies visited, offers extended, and roles filled per recruiter', freq: 'Quarterly', lastGenerated: '2 weeks ago', format: 'Excel' },
+  { name: 'Student-wise Report', description: 'Individual student placement status, applications, and offer history', freq: 'On demand', lastGenerated: '5 days ago', format: 'Excel' },
+  { name: 'Drive Outcomes Report', description: 'Results of each placement drive — attendance, shortlists, offers', freq: 'On demand', lastGenerated: '1 day ago', format: 'PDF' },
+  { name: 'Annual TPO Report', description: 'Full-year summary for management and accreditation submissions', freq: 'Annual', lastGenerated: '2 months ago', format: 'PDF' },
+]
+
+function ReportsPage() {
+  const t = useTheme()
+  const [search, setSearch] = useState('')
+
+  const filtered = useMemo(() => {
+    if (!search) return REPORTS
+    return REPORTS.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
+  }, [search])
+
+  return (
+    <div className="px-5 lg:px-7 py-6">
+
+      {/* Summary strip */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Available Reports', value: String(REPORTS.length), sub: 'Across all modules' },
+          { label: 'Generated This Month', value: '4', sub: 'Placement & department reports' },
+          { label: 'Scheduled Reports', value: '3', sub: 'Monthly & quarterly' },
+          { label: 'Last Export', value: '1 day ago', sub: 'Drive Outcomes Report' },
+        ].map(s => (
+          <div key={s.label} className="rounded-xl p-5 flex flex-col gap-3" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+            <span style={{ fontFamily: FONT_BODY, fontSize: '0.7rem', color: t.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{s.label}</span>
+            <div>
+              <div style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '2rem', color: t.text, letterSpacing: '-0.01em', lineHeight: 1 }}>{s.value}</div>
+              <div className="text-xs mt-2" style={{ color: t.textMuted }}>{s.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Report catalog */}
+      <div className="rounded-xl overflow-hidden" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+        <div className="flex items-center justify-between px-5 py-4 gap-3 flex-wrap" style={{ borderBottom: '1px solid #f8fafc' }}>
+          <div>
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Report Catalog</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Generate and download placement reports</p>
+          </div>
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search reports"
+            className="text-xs px-3 py-1.5 rounded-lg outline-none"
+            style={{ border: '1px solid #e0e5ff', color: t.text, background: t.bg, fontFamily: FONT_BODY, width: 200 }}
+          />
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr style={{ borderBottom: '1px solid #f8fafc' }}>
+                {['Report', 'Frequency', 'Format', 'Last Generated', ''].map(h => (
+                  <th key={h} className="text-left px-5 py-3" style={{ fontSize: '0.68rem', fontWeight: 600, color: t.textMuted, fontFamily: FONT_BODY, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r, i) => (
+                <tr key={r.name} className="transition-colors hover:bg-slate-50" style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f8fafc' : 'none' }}>
+                  <td className="px-5 py-3.5">
+                    <div style={{ fontSize: '0.85rem', fontWeight: 500, color: t.text, fontFamily: FONT_DISPLAY }}>{r.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: t.textMuted, maxWidth: 360 }}>{r.description}</div>
+                  </td>
+                  <td className="px-5 py-3.5"><span className="text-xs" style={{ color: t.textMuted }}>{r.freq}</span></td>
+                  <td className="px-5 py-3.5">
+                    <span style={{
+                      display: 'inline-block',
+                      borderLeft: `2px solid ${r.format === 'PDF' ? '#ef4444' : '#10b981'}`,
+                      paddingLeft: '8px',
+                      color: r.format === 'PDF' ? '#dc2626' : '#059669',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      fontFamily: FONT_BODY,
+                    }}>
+                      {r.format}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5"><span className="text-xs font-medium" style={{ color: t.text, fontFamily: FONT_MONO }}>{r.lastGenerated}</span></td>
+                  <td className="px-5 py-3.5">
+                    <button className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-colors" style={{ color: t.accent, border: '1px solid #e0e5ff' }}>
+                      Download <ArrowRight size={12} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Settings page — replace the "Settings — coming soon" fallback with this
+// ─────────────────────────────────────────────────────────────────────────────
+
+type SettingsTab = 'Profile' | 'Roles' | 'Help'
+
+type RoleRow = {
+  role: string
+  users: number
+  permissions: string[]
+}
+
+const ROLES: RoleRow[] = [
+  { role: 'Placement Officer', users: 2, permissions: ['Full access', 'Manage drives', 'Manage companies', 'View analytics'] },
+  { role: 'Placement Coordinator', users: 4, permissions: ['Manage students', 'Manage drives', 'View analytics'] },
+  { role: 'Department Coordinator', users: 6, permissions: ['View own department', 'Update student records'] },
+  { role: 'Student', users: 842, permissions: ['View own profile', 'Apply to drives'] },
+  { role: 'Recruiter', users: 37, permissions: ['View shortlisted candidates', 'Post drives'] },
+]
+
+function SettingsPage() {
+  const t = useTheme()
+  const [tab, setTab] = useState<SettingsTab>('Profile')
+  const [issueText, setIssueText] = useState('')
+  const [issueSent, setIssueSent] = useState(false)
+
+  const TabButton = ({ id, label }: { id: SettingsTab; label: string }) => (
+    <button
+      onClick={() => setTab(id)}
+      className="px-4 py-2 text-xs font-medium rounded-lg transition-colors"
+      style={{
+        color: tab === id ? t.bg : t.textMuted,
+        background: tab === id ? t.accent : 'transparent',
+        fontFamily: FONT_BODY,
+      }}
+    >
+      {label}
+    </button>
+  )
+
+  return (
+    <div className="px-5 lg:px-7 py-6">
+
+      {/* Tabs */}
+      <div className="flex items-center gap-2 mb-6 p-1 rounded-xl w-fit" style={{ background: '#f8fafc', border: '1px solid #e9ecef' }}>
+        <TabButton id="Profile" label="Profile & Account" />
+        <TabButton id="Roles" label="Roles & Permissions" />
+        <TabButton id="Help" label="Help Centre" />
+      </div>
+
+      {/* Profile & Account */}
+      {tab === 'Profile' && (
+        <div className="rounded-xl p-6 max-w-2xl" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+          <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Profile & Account</h2>
+          <p className="text-xs mt-0.5 mb-6" style={{ color: t.textMuted }}>Update your personal details and account preferences</p>
+
+          <div className="flex flex-col gap-4">
+            {[
+              { label: 'Full Name', value: 'Placement Officer' },
+              { label: 'Email', value: 'officer@hustlegrad.com' },
+              { label: 'Institution', value: 'HustleGrad University' },
+              { label: 'Role', value: 'Placement Officer' },
+            ].map(f => (
+              <div key={f.label}>
+                <label className="text-xs font-medium block mb-1.5" style={{ color: t.textMuted, fontFamily: FONT_BODY }}>{f.label}</label>
+                <input
+                  defaultValue={f.value}
+                  disabled={f.label === 'Role'}
+                  className="w-full text-sm px-3.5 py-2.5 rounded-lg outline-none"
+                  style={{ border: '1px solid #e0e5ff', color: t.text, background: f.label === 'Role' ? '#f8fafc' : t.bg, fontFamily: FONT_BODY }}
+                />
+              </div>
+            ))}
+            <div className="flex items-center justify-between mt-2 p-4 rounded-lg" style={{ background: '#f8fafc' }}>
+              <div>
+                <div className="text-sm font-medium" style={{ color: t.text, fontFamily: FONT_DISPLAY }}>Two-Factor Authentication</div>
+                <div className="text-xs mt-0.5" style={{ color: t.textMuted }}>Add an extra layer of security to your account</div>
+              </div>
+              <button className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: t.accent, border: '1px solid #e0e5ff' }}>Enable</button>
+            </div>
+            <button className="text-xs font-medium px-4 py-2.5 rounded-lg w-fit mt-2" style={{ background: t.accent, color: '#fff', fontFamily: FONT_BODY }}>
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Roles & Permissions */}
+      {tab === 'Roles' && (
+        <div className="rounded-xl overflow-hidden" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+          <div className="px-5 py-4" style={{ borderBottom: '1px solid #f8fafc' }}>
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Roles & Permissions</h2>
+            <p className="text-xs mt-0.5" style={{ color: t.textMuted }}>Manage what each role can see and do across the platform</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f8fafc' }}>
+                  {['Role', 'Users', 'Permissions', ''].map(h => (
+                    <th key={h} className="text-left px-5 py-3" style={{ fontSize: '0.68rem', fontWeight: 600, color: t.textMuted, fontFamily: FONT_BODY, letterSpacing: '0.05em', textTransform: 'uppercase' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ROLES.map((r, i) => (
+                  <tr key={r.role} className="transition-colors hover:bg-slate-50" style={{ borderBottom: i < ROLES.length - 1 ? '1px solid #f8fafc' : 'none' }}>
+                    <td className="px-5 py-3.5"><span className="text-sm font-medium" style={{ color: t.text, fontFamily: FONT_DISPLAY }}>{r.role}</span></td>
+                    <td className="px-5 py-3.5"><span className="text-xs font-medium" style={{ color: t.text, fontFamily: FONT_MONO }}>{r.users}</span></td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-wrap gap-1.5">
+                        {r.permissions.map(p => (
+                          <span key={p} className="text-xs px-2 py-1 rounded-md" style={{ background: '#f0f1ff', color: t.accent, fontFamily: FONT_BODY }}>{p}</span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <button className="text-xs font-medium px-3 py-1.5 rounded-lg" style={{ color: t.accent, border: '1px solid #e0e5ff' }}>Edit</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Help Centre / Report an Issue */}
+      {tab === 'Help' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-xl p-6" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Help Centre</h2>
+            <p className="text-xs mt-0.5 mb-4" style={{ color: t.textMuted }}>Common questions and guides</p>
+            <div className="flex flex-col gap-2">
+              {[
+                'How do I schedule a placement drive?',
+                'How do I verify a student document?',
+                'How do I add a new company to the CRM?',
+                'How are placement rates calculated?',
+              ].map(q => (
+                <button key={q} className="text-left text-sm px-4 py-3 rounded-lg transition-colors hover:bg-slate-50" style={{ border: '1px solid #f1f5f9', color: t.text, fontFamily: FONT_BODY }}>
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl p-6" style={{ background: t.bg, border: '1px solid #e9ecef' }}>
+            <h2 style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.125rem', color: t.text, letterSpacing: '0.01em' }}>Report an Issue</h2>
+            <p className="text-xs mt-0.5 mb-4" style={{ color: t.textMuted }}>Facing a bug or unexpected behaviour? Let us know</p>
+            {issueSent ? (
+              <div className="text-sm px-4 py-3 rounded-lg" style={{ background: '#ecfdf5', color: '#059669', fontFamily: FONT_BODY }}>
+                Thanks — your issue has been logged. Our team will follow up by email.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <textarea
+                  value={issueText}
+                  onChange={e => setIssueText(e.target.value)}
+                  placeholder="Describe the issue you're facing…"
+                  rows={5}
+                  className="w-full text-sm px-3.5 py-2.5 rounded-lg outline-none resize-none"
+                  style={{ border: '1px solid #e0e5ff', color: t.text, background: t.bg, fontFamily: FONT_BODY }}
+                />
+                <button
+                  onClick={() => setIssueSent(true)}
+                  disabled={!issueText.trim()}
+                  className="text-xs font-medium px-4 py-2.5 rounded-lg w-fit"
+                  style={{ background: issueText.trim() ? t.accent : '#e2e8f0', color: '#fff', fontFamily: FONT_BODY }}
+                >
+                  Submit Issue
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Dashboard page
@@ -3752,11 +4443,7 @@ function AuthPage({ onLogin, darkMode, setDarkMode }: { onLogin: () => void; dar
 
         {/* Logo */}
         <div className="relative z-10 px-10 pt-10 flex items-center gap-3">
-          <img
-            src={hustleGradLogo}
-            alt="HustleGrad"
-            style={{ width: 36, height: 36, objectFit: 'contain', filter: 'brightness(0) invert(1)' }}
-          />
+
           <span style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.375rem', color: t.bg, letterSpacing: '0.04em' }}>HustleGrad</span>
         </div>
 
@@ -3829,11 +4516,7 @@ function AuthPage({ onLogin, darkMode, setDarkMode }: { onLogin: () => void; dar
 
           {/* Mobile logo */}
           <div className="flex items-center gap-2.5 mb-8 lg:hidden">
-            <img
-              src={hustleGradLogo}
-              alt="HustleGrad"
-              style={{ width: 28, height: 28, objectFit: 'contain' }}
-            />
+
             <span style={{ fontFamily: FONT_CONDENSED, fontWeight: 700, fontSize: '1.25rem', color: '#0b1120', letterSpacing: '0.04em' }}>HustleGrad</span>
           </div>
 
